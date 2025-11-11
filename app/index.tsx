@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, TextInput, Modal, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Text } from '@/components/nativewindui/Text';
-import { TaskStats } from '@/components/TaskStats';
 import { TaskItem } from '@/components/TaskItem';
-import { ActionButtons } from '@/components/ActionButtons';
 import { useTodoStore } from '@/store/store';
 
 export default function Home() {
@@ -24,6 +21,7 @@ export default function Home() {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
 
   useEffect(() => {
     loadTasks();
@@ -40,106 +38,133 @@ export default function Home() {
     }
   };
 
-  const handleDeleteCompleted = () => {
-    const completedTasks = tasks.filter((t) => t.completed);
-    if (completedTasks.length === 0) {
-      Alert.alert('Nothing to Delete', 'No completed tasks found');
-      return;
-    }
-
-    Alert.alert(
-      'Delete Completed Tasks',
-      `Delete ${completedTasks.length} completed task(s)?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            completedTasks.forEach((task) => deleteTask(task.id));
-          },
-        },
-      ]
-    );
-  };
-
   const filteredTasks = getFilteredTasks();
   const todoTasks = filteredTasks.filter((t) => !t.completed);
   const completedTasks = filteredTasks.filter((t) => t.completed);
 
   return (
-    <View className="flex-1" style={{ paddingTop: insets.top }}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={['#667eea', '#764ba2']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        className="flex-1"
+    <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
+      <StatusBar barStyle="dark-content" />
+      
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
-        <ScrollView 
-          className="flex-1" 
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
-        >
-          {/* Header */}
-          <View className="px-6 pb-4 pt-8">
-            <Text className="text-5xl font-black text-white">My Tasks</Text>
-            <Text className="mt-2 text-base text-white/80">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        {/* Header */}
+        <View className="border-b border-gray-200 px-6 pb-6 pt-8">
+          <Text className="text-5xl font-black text-black">Tasks</Text>
+          <Text className="mt-2 text-base text-gray-500">
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </Text>
+        </View>
+
+        {/* Active Tab Content */}
+        {activeTab === 'active' && (
+          <>
+            {todoTasks.length > 0 ? (
+              <View className="px-6 pt-6">
+                <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+                  Active ({todoTasks.length})
+                </Text>
+                {todoTasks.map((task) => (
+                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                ))}
+              </View>
+            ) : (
+              <View className="items-center justify-center px-8 py-20">
+                <View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+                  <Text className="text-5xl">✓</Text>
+                </View>
+                <Text className="text-center text-xl font-bold text-black">All Clear!</Text>
+                <Text className="mt-2 text-center text-base text-gray-500">
+                  You have no active tasks
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Completed Tab Content */}
+        {activeTab === 'completed' && (
+          <>
+            {completedTasks.length > 0 ? (
+              <View className="px-6 pt-6">
+                <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
+                  Completed ({completedTasks.length})
+                </Text>
+                {completedTasks.map((task) => (
+                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                ))}
+              </View>
+            ) : (
+              <View className="items-center justify-center px-8 py-20">
+                <View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+                  <Text className="text-5xl">○</Text>
+                </View>
+                <Text className="text-center text-xl font-bold text-black">Nothing Yet</Text>
+                <Text className="mt-2 text-center text-base text-gray-500">
+                  Complete some tasks to see them here
+                </Text>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Empty State - No tasks at all */}
+        {tasks.length === 0 && (
+          <View className="items-center justify-center px-8 py-20">
+            <View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+              <Text className="text-5xl">+</Text>
+            </View>
+            <Text className="text-center text-xl font-bold text-black">Start Fresh</Text>
+            <Text className="mt-2 text-center text-base text-gray-500">
+              Tap the + button to create your first task
             </Text>
           </View>
+        )}
+      </ScrollView>
 
-          {/* Stats Card */}
-          <TaskStats todoCount={getTodoCount()} completedCount={getCompletedCount()} />
+      {/* Bottom Navigation Bar */}
+      <View 
+        className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-4 py-3"
+        style={{ paddingBottom: insets.bottom + 12 }}
+      >
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity
+            onPress={() => setActiveTab('active')}
+            className={`flex-1 rounded-2xl py-4 ${
+              activeTab === 'active' ? 'border-2 border-black' : ''
+            }`}
+            activeOpacity={0.7}
+          >
+            <Text className="text-center text-base font-bold text-black">
+              Active
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            onPress={() => setActiveTab('completed')}
+            className={`flex-1 rounded-2xl py-4 ${
+              activeTab === 'completed' ? 'border-2 border-black' : ''
+            }`}
+            activeOpacity={0.7}
+          >
+            <Text className="text-center text-base font-bold text-black">
+              Completed
+            </Text>
+          </TouchableOpacity>
 
-          {/* Action Buttons */}
-          <ActionButtons
-            onDelete={handleDeleteCompleted}
-            onAdd={() => setIsAddModalVisible(true)}
-          />
-
-          {/* Todo Tasks */}
-          {todoTasks.length > 0 && (
-            <View className="mb-6 px-6">
-              <Text className="mb-3 text-xl font-bold text-white">Active Tasks</Text>
-              {todoTasks.map((task) => (
-                <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-              ))}
-            </View>
-          )}
-
-          {/* Complete Section */}
-          {completedTasks.length > 0 && (
-            <View className="mb-6 px-6">
-              <Text className="mb-3 text-xl font-bold text-white/90">Completed</Text>
-              {completedTasks.map((task) => (
-                <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-              ))}
-            </View>
-          )}
-
-          {/* Empty State */}
-          {tasks.length === 0 && (
-            <View className="items-center justify-center px-8 py-20">
-              <Text className="text-7xl">📝</Text>
-              <Text className="mt-4 text-center text-xl font-semibold text-white">No Tasks Yet</Text>
-              <Text className="mt-2 text-center text-base text-white/70">
-                Tap the Add button to create your first task
-              </Text>
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Floating Add Button */}
-        <TouchableOpacity
-          onPress={() => setIsAddModalVisible(true)}
-          className="absolute bottom-8 right-6 h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg shadow-black/30"
-          activeOpacity={0.8}
-          style={{ elevation: 8 }}
-        >
-          <Text className="text-3xl font-bold text-purple-600">+</Text>
-        </TouchableOpacity>
-      </LinearGradient>
+          {/* Add Button */}
+          <TouchableOpacity
+            onPress={() => setIsAddModalVisible(true)}
+            className="h-14 w-14 items-center justify-center rounded-2xl bg-black"
+            activeOpacity={0.7}
+          >
+            <Text className="text-3xl font-light text-white">+</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Add Task Modal */}
       <Modal
@@ -148,17 +173,17 @@ export default function Home() {
         transparent={true}
         onRequestClose={() => setIsAddModalVisible(false)}
       >
-        <View className="flex-1 justify-end bg-black/50">
+        <View className="flex-1 justify-end bg-black/20">
           <View className="rounded-t-3xl bg-white px-6 pb-8 pt-6">
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-2xl font-bold text-gray-900">New Task</Text>
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text className="text-2xl font-bold text-black">New Task</Text>
               <TouchableOpacity onPress={() => setIsAddModalVisible(false)}>
-                <Text className="text-3xl text-gray-400">×</Text>
+                <Text className="text-3xl font-light text-gray-400">×</Text>
               </TouchableOpacity>
             </View>
 
             <TextInput
-              className="mb-4 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-4 text-base text-gray-900"
+              className="mb-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
               placeholder="Task title"
               placeholderTextColor="#9ca3af"
               value={newTaskTitle}
@@ -167,7 +192,7 @@ export default function Home() {
             />
 
             <TextInput
-              className="mb-6 rounded-2xl border-2 border-gray-200 bg-gray-50 px-5 py-4 text-base text-gray-900"
+              className="mb-6 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
               placeholder="Description (optional)"
               placeholderTextColor="#9ca3af"
               value={newTaskDescription}
@@ -179,9 +204,8 @@ export default function Home() {
 
             <TouchableOpacity
               onPress={handleAddTask}
-              className="rounded-2xl bg-purple-600 py-4 shadow-lg shadow-purple-600/30"
-              activeOpacity={0.8}
-              style={{ elevation: 4 }}
+              className="rounded-2xl bg-black py-4"
+              activeOpacity={0.7}
             >
               <Text className="text-center text-base font-bold text-white">Add Task</Text>
             </TouchableOpacity>
