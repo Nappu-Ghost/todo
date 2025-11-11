@@ -116,8 +116,8 @@ export function TaskItem({ task, onToggle, onDelete, isAnimating = false }: Task
                     fontSize: 14,
                     fontWeight: 'bold',
                     color: 'white',
-                    transform: [{ scale: checkmarkScale }],
-                    opacity: checkmarkOpacity,
+                    transform: [{ scale: isAnimating ? checkmarkScale : 1 }],
+                    opacity: isAnimating ? checkmarkOpacity : 1,
                   }}
                 >
                   ✓
