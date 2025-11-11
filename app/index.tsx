@@ -53,7 +53,7 @@ export default function Home() {
       >
         {/* Header */}
         <View className="border-b border-gray-200 px-6 pb-6 pt-8">
-          <Text className="text-5xl font-black text-black">Tasks</Text>
+          <Text className="text-5xl font-black text-black">The Todo App</Text>
           <Text className="mt-2 text-base text-gray-500">
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </Text>
@@ -78,7 +78,8 @@ export default function Home() {
                 </View>
                 <Text className="text-center text-xl font-bold text-black">All Clear!</Text>
                 <Text className="mt-2 text-center text-base text-gray-500">
-                  You have no active tasks
+                  You have no active tasks.
+                  Tap the + button to create your first task
                 </Text>
               </View>
             )}
@@ -111,18 +112,6 @@ export default function Home() {
           </>
         )}
 
-        {/* Empty State - No tasks at all */}
-        {tasks.length === 0 && (
-          <View className="items-center justify-center px-8 py-20">
-            <View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-gray-100">
-              <Text className="text-5xl">+</Text>
-            </View>
-            <Text className="text-center text-xl font-bold text-black">Start Fresh</Text>
-            <Text className="mt-2 text-center text-base text-gray-500">
-              Tap the + button to create your first task
-            </Text>
-          </View>
-        )}
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
