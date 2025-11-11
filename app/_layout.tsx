@@ -54,10 +54,7 @@ export default function RootLayout() {
 }
 
 const INDEX_OPTIONS = {
-  headerLargeTitle: true,
-  headerTransparent: isIos26,
-  title: 'NativewindUI',
-  headerRight: () => <SettingsIcon />,
+  headerShown: false,
 } as const;
 
 function SettingsIcon() {
