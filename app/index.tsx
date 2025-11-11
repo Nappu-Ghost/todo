@@ -22,6 +22,7 @@ export default function Home() {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+  const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadTasks();
@@ -38,9 +39,38 @@ export default function Home() {
     }
   };
 
+  const handleToggleTask = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+
+    // If completing a task (going from incomplete to complete)
+    if (!task.completed) {
+      // Add to animating set to trigger animation
+      setAnimatingTaskIds(prev => new Set(prev).add(id));
+      
+      // Wait for animation to complete (2 seconds), THEN toggle the task
+      setTimeout(() => {
+        toggleTask(id);
+        // Remove from animating set
+        setAnimatingTaskIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      }, 2000);
+    } else {
+      // If uncompleting, just toggle immediately
+      toggleTask(id);
+    }
+  };
+
   const filteredTasks = getFilteredTasks();
   const todoTasks = filteredTasks.filter((t) => !t.completed);
   const completedTasks = filteredTasks.filter((t) => t.completed);
+
+  // Display tasks based on active tab and animation state
+  const displayTodoTasks = todoTasks;
+  const displayCompletedTasks = completedTasks;
 
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
@@ -62,13 +92,19 @@ export default function Home() {
         {/* Active Tab Content */}
         {activeTab === 'active' && (
           <>
-            {todoTasks.length > 0 ? (
+            {displayTodoTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Active ({todoTasks.length})
                 </Text>
-                {todoTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                {displayTodoTasks.map((task) => (
+                  <TaskItem 
+                    key={task.id} 
+                    task={task} 
+                    onToggle={handleToggleTask} 
+                    onDelete={deleteTask}
+                    isAnimating={animatingTaskIds.has(task.id)}
+                  />
                 ))}
               </View>
             ) : (
@@ -89,13 +125,19 @@ export default function Home() {
         {/* Completed Tab Content */}
         {activeTab === 'completed' && (
           <>
-            {completedTasks.length > 0 ? (
+            {displayCompletedTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Completed ({completedTasks.length})
                 </Text>
-                {completedTasks.map((task) => (
-                  <TaskItem key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                {displayCompletedTasks.map((task) => (
+                  <TaskItem 
+                    key={task.id} 
+                    task={task} 
+                    onToggle={handleToggleTask} 
+                    onDelete={deleteTask}
+                    isAnimating={false}
+                  />
                 ))}
               </View>
             ) : (
