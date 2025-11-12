@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Animated } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Text } from './nativewindui/Text';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Task } from '@/types';
 import { Icon } from './nativewindui/Icon';
 
@@ -103,7 +104,7 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
         overshootRight={false}
         renderRightActions={() => (
           <View style={{ width: ACTION_WIDTH, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
-              { !task.completed && (
+              { !task.completed ? (
                 <Animated.View style={{ marginRight: 8 }}>
                   <TouchableOpacity
                     onPress={() => onEdit && onEdit(task.id)}
@@ -111,6 +112,16 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
                     activeOpacity={0.8}
                   >
                     <Icon name="pencil" size={18} className="text-black" />
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : (
+                <Animated.View style={{ marginRight: 8 }}>
+                  <TouchableOpacity
+                    onPress={() => onToggle(task.id)}
+                    className="h-10 w-10 items-center justify-center rounded-xl bg-white border border-black"
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name="undo" size={18} color="#000" />
                   </TouchableOpacity>
                 </Animated.View>
               )}
