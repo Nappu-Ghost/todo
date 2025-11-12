@@ -1,22 +1,26 @@
 import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Animated } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Text } from './nativewindui/Text';
 import { Task } from '@/types';
+import { Icon } from './nativewindui/Icon';
 
 interface TaskItemProps {
   task: Task;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onEdit?: (id: string) => void;
   isAnimating?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onDelete, isAnimating = false }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false }: TaskItemProps) {
   // Animation values
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const checkmarkOpacity = useRef(new Animated.Value(0)).current;
   const strikethroughWidth = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  // (Swipeable will handle interactive reveal)
 
   // Run animation sequence when isAnimating becomes true
   useEffect(() => {
@@ -82,92 +86,118 @@ export function TaskItem({ task, onToggle, onDelete, isAnimating = false }: Task
     onToggle(task.id);
   };
 
+  const ACTION_WIDTH = 120; // width reserved for actions
+
   const slideTranslateX = slideAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 300],
   });
 
-  return (
-    <Animated.View 
-      className="mb-3"
-      style={{
-        transform: [{ translateX: slideTranslateX }],
-        opacity: fadeAnim,
-      }}
-    >
-      <View
-        className={`flex-row items-center rounded-2xl px-5 py-4 ${
-          task.completed ? 'bg-gray-100 border border-gray-200' : 'bg-black'
-        }`}
-      >
-        <View className="flex-1 flex-row items-center gap-4">
-          {/* Circle Checkbox - Now pressable */}
-          <TouchableOpacity
-            onPress={handleCirclePress}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
-              isAnimating || task.completed ? 'bg-green-500 border-green-500' : 'bg-white border-white'
-            }`}>
-              {(isAnimating || task.completed) && (
-                <Animated.Text 
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 'bold',
-                    color: 'white',
-                    transform: [{ scale: isAnimating ? checkmarkScale : 1 }],
-                    opacity: isAnimating ? checkmarkOpacity : 1,
-                  }}
-                >
-                  ✓
-                </Animated.Text>
-              )}
-            </View>
-          </TouchableOpacity>
-          
-          <View className="flex-1">
-            {/* Title with animated strikethrough */}
-            <View style={{ position: 'relative' }}>
-              <Text className={`text-base font-semibold ${
-                task.completed ? 'text-gray-400' : 'text-white'
-              }`}>
-                {task.title}
-              </Text>
-              {(isAnimating || task.completed) && (
-                <Animated.View
-                  style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: 0,
-                    height: 2,
-                    backgroundColor: '#9ca3af',
-                    width: strikethroughWidth.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0%', '100%'],
-                    }),
-                  }}
-                />
-              )}
-            </View>
-            {task.description && (
-              <Text className={`mt-1 text-sm ${
-                task.completed ? 'text-gray-300' : 'text-white/70'
-              }`} numberOfLines={1}>
-                {task.description}
-              </Text>
-            )}
-          </View>
-        </View>
+  // The outer Swipeable will move the row horizontally. We keep slideTranslateX for completion animation
+  const combinedTranslateX = slideTranslateX;
 
-        <TouchableOpacity
-          onPress={() => onDelete(task.id)}
-          className="ml-2 p-2"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+  return (
+    <View className="mb-3">
+      <Swipeable
+        friction={2}
+        overshootRight={false}
+        renderRightActions={() => (
+          <View style={{ width: ACTION_WIDTH, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
+            <Animated.View style={{ marginRight: 8 }}>
+              <TouchableOpacity
+                onPress={() => onEdit && onEdit(task.id)}
+                className="h-10 w-10 items-center justify-center rounded-xl bg-white border border-black"
+                activeOpacity={0.8}
+              >
+                <Icon name="pencil" size={18} className="text-black" />
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View>
+              <TouchableOpacity
+                onPress={() => onDelete(task.id)}
+                className="h-10 w-10 items-center justify-center rounded-xl bg-red-500"
+                activeOpacity={0.8}
+              >
+                <Icon name="trash" size={18} className="text-white" />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        )}
+      >
+        <Animated.View
+          style={{
+            transform: [{ translateX: combinedTranslateX }],
+            opacity: fadeAnim,
+          }}
         >
-          <Text className={`text-base ${task.completed ? 'text-gray-400' : 'text-white'}`}>×</Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+          <View
+            className={`flex-row items-center rounded-2xl px-5 py-4 ${
+              task.completed ? 'bg-gray-100 border border-gray-200' : 'bg-black'
+            }`}
+          >
+            <View className="flex-1 flex-row items-center gap-4">
+              {/* Circle Checkbox - Now pressable */}
+              <TouchableOpacity
+                onPress={handleCirclePress}
+                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
+                  isAnimating || task.completed ? 'bg-green-500 border-green-500' : 'bg-white border-white'
+                }`}>
+                  {(isAnimating || task.completed) && (
+                    <Animated.Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 'bold',
+                        color: 'white',
+                        transform: [{ scale: isAnimating ? checkmarkScale : 1 }],
+                        opacity: isAnimating ? checkmarkOpacity : 1,
+                      }}
+                    >
+                      ✓
+                    </Animated.Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              <View style={{ flex: 1 }}>
+                {/* Title with animated strikethrough */}
+                <View style={{ position: 'relative' }}>
+                  <Text className={`text-base font-semibold ${
+                    task.completed ? 'text-gray-400' : 'text-white'
+                  }`}>
+                    {task.title}
+                  </Text>
+                  {(isAnimating || task.completed) && (
+                    <Animated.View
+                      style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: 0,
+                        height: 2,
+                        backgroundColor: '#9ca3af',
+                        width: strikethroughWidth.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0%', '100%'],
+                        }),
+                      }}
+                    />
+                  )}
+                </View>
+                {task.description && (
+                  <Text className={`mt-1 text-sm ${
+                    task.completed ? 'text-gray-300' : 'text-white/70'
+                  }`} numberOfLines={1}>
+                    {task.description}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+      </Swipeable>
+    </View>
   );
 }

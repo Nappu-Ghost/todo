@@ -13,6 +13,7 @@ export default function Home() {
     addTask,
     toggleTask,
     deleteTask,
+    updateTask,
     getFilteredTasks,
     getTodoCount,
     getCompletedCount,
@@ -21,6 +22,7 @@ export default function Home() {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [animatingTaskIds, setAnimatingTaskIds] = useState<Set<string>>(new Set());
 
@@ -30,13 +32,27 @@ export default function Home() {
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
-      addTask(newTaskTitle.trim(), newTaskDescription.trim());
+      if (editingTaskId) {
+        updateTask(editingTaskId, { title: newTaskTitle.trim(), description: newTaskDescription.trim() });
+        setEditingTaskId(null);
+      } else {
+        addTask(newTaskTitle.trim(), newTaskDescription.trim());
+      }
       setNewTaskTitle('');
       setNewTaskDescription('');
       setIsAddModalVisible(false);
     } else {
       Alert.alert('Oops!', 'Please enter a task title');
     }
+  };
+
+  const handleEdit = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (!task) return;
+    setEditingTaskId(id);
+    setNewTaskTitle(task.title);
+    setNewTaskDescription(task.description || '');
+    setIsAddModalVisible(true);
   };
 
   const handleToggleTask = (id: string) => {
@@ -104,6 +120,7 @@ export default function Home() {
                     onToggle={handleToggleTask} 
                     onDelete={deleteTask}
                     isAnimating={animatingTaskIds.has(task.id)}
+                    onEdit={handleEdit}
                   />
                 ))}
               </View>
@@ -137,6 +154,7 @@ export default function Home() {
                     onToggle={handleToggleTask} 
                     onDelete={deleteTask}
                     isAnimating={false}
+                    onEdit={handleEdit}
                   />
                 ))}
               </View>
