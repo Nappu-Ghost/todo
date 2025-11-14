@@ -1,17 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  ScrollView,
-  TextInput,
-  Modal,
-  TouchableOpacity,
-  Alert,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from 'react-native';
+import { View, ScrollView, TextInput, Modal, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/nativewindui/Text';
 import { TaskItem } from '@/components/TaskItem';
@@ -234,57 +222,44 @@ export default function Home() {
         transparent={true}
         onRequestClose={() => setIsAddModalVisible(false)}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={insets.top + 80}
-          style={{ flex: 1, justifyContent: 'flex-end' }}
-        >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View className="flex-1 justify-end bg-black/20">
-              <ScrollView
-                contentContainerStyle={{ paddingBottom: 40 }}
-                keyboardShouldPersistTaps="handled"
-              >
-                <View className="rounded-t-3xl bg-white px-6 pb-8 pt-6">
-                  <View className="mb-6 flex-row items-center justify-between">
-                    <Text className="text-2xl font-bold text-black">New Task</Text>
-                    <TouchableOpacity onPress={() => setIsAddModalVisible(false)}>
-                      <Text className="text-3xl font-light text-gray-400">×</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  <TextInput
-                    className="mb-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
-                    placeholder="Task title"
-                    placeholderTextColor="#9ca3af"
-                    value={newTaskTitle}
-                    onChangeText={setNewTaskTitle}
-                    autoFocus
-                  />
-
-                  <TextInput
-                    className="mb-6 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
-                    placeholder="Description (optional)"
-                    placeholderTextColor="#9ca3af"
-                    value={newTaskDescription}
-                    onChangeText={setNewTaskDescription}
-                    multiline
-                    numberOfLines={3}
-                    textAlignVertical="top"
-                  />
-
-                  <TouchableOpacity
-                    onPress={handleAddTask}
-                    className="rounded-2xl bg-black py-4"
-                    activeOpacity={0.7}
-                  >
-                    <Text className="text-center text-base font-bold text-white">Add Task</Text>
-                  </TouchableOpacity>
-                </View>
-              </ScrollView>
+        <View className="flex-1 justify-end bg-black/20">
+          <View className="rounded-t-3xl bg-white px-6 pb-8 pt-6">
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text className="text-2xl font-bold text-black">New Task</Text>
+              <TouchableOpacity onPress={() => setIsAddModalVisible(false)}>
+                <Text className="text-3xl font-light text-gray-400">×</Text>
+              </TouchableOpacity>
             </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+
+            <TextInput
+              className="mb-4 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
+              placeholder="Task title"
+              placeholderTextColor="#9ca3af"
+              value={newTaskTitle}
+              onChangeText={setNewTaskTitle}
+              autoFocus
+            />
+
+            <TextInput
+              className="mb-6 rounded-2xl border border-gray-200 bg-white px-5 py-4 text-base text-black"
+              placeholder="Description (optional)"
+              placeholderTextColor="#9ca3af"
+              value={newTaskDescription}
+              onChangeText={setNewTaskDescription}
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <TouchableOpacity
+              onPress={handleAddTask}
+              className="rounded-2xl bg-black py-4"
+              activeOpacity={0.7}
+            >
+              <Text className="text-center text-base font-bold text-white">Add Task</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
