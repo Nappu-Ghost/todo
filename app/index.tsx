@@ -95,10 +95,6 @@ export default function Home() {
     return { todoTasks: todo, completedTasks: completed };
   }, [tasks]);
 
-  // Display tasks based on active tab and animation state
-  const displayTodoTasks = useMemo(() => todoTasks, [todoTasks]);
-  const displayCompletedTasks = useMemo(() => completedTasks, [completedTasks]);
-
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" />
@@ -122,12 +118,12 @@ export default function Home() {
         {/* Active Tab Content */}
         {activeTab === 'active' && (
           <>
-            {displayTodoTasks.length > 0 ? (
+            {todoTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Active ({todoTasks.length})
                 </Text>
-                {displayTodoTasks.map((task) => (
+                {todoTasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -155,12 +151,12 @@ export default function Home() {
         {/* Completed Tab Content */}
         {activeTab === 'completed' && (
           <>
-            {displayCompletedTasks.length > 0 ? (
+            {completedTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Completed ({completedTasks.length})
                 </Text>
-                {displayCompletedTasks.map((task) => (
+                {completedTasks.map((task) => (
                   <TaskItem
                     key={task.id}
                     task={task}

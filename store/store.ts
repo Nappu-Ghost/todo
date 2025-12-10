@@ -4,19 +4,6 @@ import { Task, FilterType } from '@/types';
 
 const STORAGE_KEY = '@todo_tasks';
 
-// Debounce storage writes to avoid blocking UI on every update
-let saveTimeout: NodeJS.Timeout | null = null;
-const saveToStorage = (tasks: Task[]) => {
-  if (saveTimeout) {
-    clearTimeout(saveTimeout);
-  }
-  saveTimeout = setTimeout(() => {
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)).catch((error) => {
-      console.error('Failed to save tasks:', error);
-    });
-  }, 300); // Debounce by 300ms
-};
-
 interface TodoStore {
   tasks: Task[];
   filter: FilterType;
@@ -36,82 +23,97 @@ interface TodoStore {
   getCompletedCount: () => number;
 }
 
-export const useTodoStore = create<TodoStore>((set, get) => ({
-  tasks: [],
-  filter: 'all',
-  isLoading: false,
+export const useTodoStore = create<TodoStore>((set, get) => {
+  // Debounce storage writes to avoid blocking UI on every update
+  let saveTimeout: NodeJS.Timeout | null = null;
+  const saveToStorage = (tasks: Task[]) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    saveTimeout = setTimeout(() => {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)).catch((error) => {
+        console.error('Failed to save tasks:', error);
+      });
+    }, 300); // Debounce by 300ms
+  };
 
-  addTask: (title: string, description?: string) => {
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title,
-      description,
-      completed: false,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+  return {
+    tasks: [],
+    filter: 'all',
+    isLoading: false,
 
-    set((state) => {
-      const newTasks = [...state.tasks, newTask];
-      saveToStorage(newTasks);
-      return { tasks: newTasks };
-    });
-  },
+    addTask: (title: string, description?: string) => {
+      const newTask: Task = {
+        id: Date.now().toString(),
+        title,
+        description,
+        completed: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
 
-  updateTask: (id: string, updates: Partial<Task>) => {
-    set((state) => {
-      const newTasks = state.tasks.map((task) =>
-        task.id === id ? { ...task, ...updates, updatedAt: Date.now() } : task
-      );
-      saveToStorage(newTasks);
-      return { tasks: newTasks };
-    });
-  },
+      set((state) => {
+        const newTasks = [...state.tasks, newTask];
+        saveToStorage(newTasks);
+        return { tasks: newTasks };
+      });
+    },
 
-  deleteTask: (id: string) => {
-    set((state) => {
-      const newTasks = state.tasks.filter((task) => task.id !== id);
-      saveToStorage(newTasks);
-      return { tasks: newTasks };
-    });
-  },
+    updateTask: (id: string, updates: Partial<Task>) => {
+      set((state) => {
+        const newTasks = state.tasks.map((task) =>
+          task.id === id ? { ...task, ...updates, updatedAt: Date.now() } : task
+        );
+        saveToStorage(newTasks);
+        return { tasks: newTasks };
+      });
+    },
 
-  toggleTask: (id: string) => {
-    set((state) => {
-      const newTasks = state.tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed, updatedAt: Date.now() } : task
-      );
-      saveToStorage(newTasks);
-      return { tasks: newTasks };
-    });
-  },
+    deleteTask: (id: string) => {
+      set((state) => {
+        const newTasks = state.tasks.filter((task) => task.id !== id);
+        saveToStorage(newTasks);
+        return { tasks: newTasks };
+      });
+    },
 
-  setFilter: (filter: FilterType) => set({ filter }),
+    toggleTask: (id: string) => {
+      set((state) => {
+        const newTasks = state.tasks.map((task) =>
+          task.id === id ? { ...task, completed: !task.completed, updatedAt: Date.now() } : task
+        );
+        saveToStorage(newTasks);
+        return { tasks: newTasks };
+      });
+    },
 
-  loadTasks: async () => {
-    try {
-      set({ isLoading: true });
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const tasks = JSON.parse(stored);
-        set({ tasks, isLoading: false });
-      } else {
+    setFilter: (filter: FilterType) => set({ filter }),
+
+    loadTasks: async () => {
+      try {
+        set({ isLoading: true });
+        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored) {
+          const tasks = JSON.parse(stored);
+          set({ tasks, isLoading: false });
+        } else {
+          set({ isLoading: false });
+        }
+      } catch (error) {
+        console.error('Failed to load tasks:', error);
         set({ isLoading: false });
       }
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-      set({ isLoading: false });
-    }
-  },
+    },
 
-  getFilteredTasks: () => {
-    const { tasks, filter } = get();
-    if (filter === 'todo') return tasks.filter((t) => !t.completed);
-    if (filter === 'completed') return tasks.filter((t) => t.completed);
-    return tasks;
-  },
+    getFilteredTasks: () => {
+      const { tasks, filter } = get();
+      if (filter === 'todo') return tasks.filter((t) => !t.completed);
+      if (filter === 'completed') return tasks.filter((t) => t.completed);
+      return tasks;
+    },
 
-  getTodoCount: () => get().tasks.filter((t) => !t.completed).length,
+    getTodoCount: () => get().tasks.filter((t) => !t.completed).length,
 
-  getCompletedCount: () => get().tasks.filter((t) => t.completed).length,
-}));
+    getCompletedCount: () => get().tasks.filter((t) => t.completed).length,
+  };
+});
