@@ -27,7 +27,7 @@ export default function Home() {
   useEffect(() => {
     loadTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run once on mount to prevent unnecessary re-renders
+  }, []); // loadTasks is stable from Zustand store - only run once on mount
 
   const handleAddTask = useCallback(() => {
     if (newTaskTitle.trim()) {

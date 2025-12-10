@@ -88,7 +88,7 @@ export const TaskItem = memo(function TaskItem({
       fadeAnim.setValue(1);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAnimating]); // Animated values are refs and should not be in dependencies
+  }, [isAnimating]); // Animation refs (checkmarkScale, checkmarkOpacity, strikethroughWidth, slideAnim, fadeAnim) are stable and excluded
 
   const handleCirclePress = () => {
     onToggle(task.id);
