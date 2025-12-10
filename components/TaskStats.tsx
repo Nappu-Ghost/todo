@@ -12,7 +12,9 @@ export function TaskStats({ todoCount, completedCount }: TaskStatsProps) {
   const completionPercentage = total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
   return (
-    <View className="mx-6 mb-6 overflow-hidden rounded-3xl bg-white/95 p-6 shadow-lg" style={{ elevation: 4 }}>
+    <View
+      className="mx-6 mb-6 overflow-hidden rounded-3xl bg-white/95 p-6 shadow-lg"
+      style={{ elevation: 4 }}>
       <View className="mb-4 flex-row items-center justify-between">
         <Text className="text-2xl font-bold text-gray-900">Progress</Text>
         <View className="rounded-full bg-purple-100 px-4 py-1.5">
@@ -22,11 +24,11 @@ export function TaskStats({ todoCount, completedCount }: TaskStatsProps) {
 
       {/* Progress Bar */}
       <View className="mb-6 h-3 overflow-hidden rounded-full bg-gray-200">
-        <View 
-          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500" 
-          style={{ 
+        <View
+          className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500"
+          style={{
             width: `${completionPercentage}%`,
-            backgroundColor: '#a855f7'
+            backgroundColor: '#a855f7',
           }}
         />
       </View>
@@ -37,7 +39,7 @@ export function TaskStats({ todoCount, completedCount }: TaskStatsProps) {
           <Text className="text-3xl font-black text-blue-600">{todoCount}</Text>
           <Text className="mt-1 text-sm font-semibold text-blue-600/70">Active</Text>
         </View>
-        
+
         <View className="flex-1 rounded-2xl bg-green-50 p-4">
           <Text className="text-3xl font-black text-green-600">{completedCount}</Text>
           <Text className="mt-1 text-sm font-semibold text-green-600/70">Done</Text>

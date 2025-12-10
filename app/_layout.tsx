@@ -1,6 +1,5 @@
 import '@/global.css';
 
-
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
@@ -21,7 +20,7 @@ export {
   ErrorBoundary,
 } from 'expo-router';
 
-const isIos26 = Platform.select({ default: false, ios: Device.osVersion?.startsWith('26.' )});
+const isIos26 = Platform.select({ default: false, ios: Device.osVersion?.startsWith('26.') });
 
 export default function RootLayout() {
   const { colorScheme, isDarkColorScheme } = useColorScheme();
@@ -35,18 +34,14 @@ export default function RootLayout() {
       {/* WRAP YOUR APP WITH ANY ADDITIONAL PROVIDERS HERE */}
       {/* <ExampleProvider> */}
       <GestureHandlerRootView style={{ flex: 1 }}>
-        
         <ActionSheetProvider>
-        
-        <NavThemeProvider value={NAV_THEME[colorScheme]}>
-          <Stack>
-            <Stack.Screen name="index" options={INDEX_OPTIONS} />
-            <Stack.Screen name="modal" options={MODAL_OPTIONS} />
-          </Stack>
-        </NavThemeProvider>
-        
+          <NavThemeProvider value={NAV_THEME[colorScheme]}>
+            <Stack>
+              <Stack.Screen name="index" options={INDEX_OPTIONS} />
+              <Stack.Screen name="modal" options={MODAL_OPTIONS} />
+            </Stack>
+          </NavThemeProvider>
         </ActionSheetProvider>
-        
       </GestureHandlerRootView>
       {/* </ExampleProvider> */}
     </>
@@ -61,7 +56,7 @@ function SettingsIcon() {
   return (
     <Link href="/modal" asChild>
       <Pressable className={cn('opacity-80 active:opacity-50', isIos26 && 'px-1.5')}>
-        <Icon name='gearshape' className='text-foreground' />
+        <Icon name="gearshape" className="text-foreground" />
       </Pressable>
     </Link>
   );

@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, TextInput, Modal, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  ScrollView,
+  TextInput,
+  Modal,
+  TouchableOpacity,
+  Alert,
+  StatusBar,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '@/components/nativewindui/Text';
 import { TaskItem } from '@/components/TaskItem';
@@ -7,17 +15,7 @@ import { useTodoStore } from '@/store/store';
 
 export default function Home() {
   const insets = useSafeAreaInsets();
-  const {
-    tasks,
-    loadTasks,
-    addTask,
-    toggleTask,
-    deleteTask,
-    updateTask,
-    getFilteredTasks,
-    getTodoCount,
-    getCompletedCount,
-  } = useTodoStore();
+  const { tasks, loadTasks, addTask, toggleTask, deleteTask, updateTask } = useTodoStore();
 
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -28,12 +26,16 @@ export default function Home() {
 
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // loadTasks is stable from Zustand store - only run once on mount
 
-  const handleAddTask = () => {
+  const handleAddTask = useCallback(() => {
     if (newTaskTitle.trim()) {
       if (editingTaskId) {
-        updateTask(editingTaskId, { title: newTaskTitle.trim(), description: newTaskDescription.trim() });
+        updateTask(editingTaskId, {
+          title: newTaskTitle.trim(),
+          description: newTaskDescription.trim(),
+        });
         setEditingTaskId(null);
       } else {
         addTask(newTaskTitle.trim(), newTaskDescription.trim());
@@ -44,80 +46,88 @@ export default function Home() {
     } else {
       Alert.alert('Oops!', 'Please enter a task title');
     }
-  };
+  }, [newTaskTitle, newTaskDescription, editingTaskId, addTask, updateTask]);
 
-  const handleEdit = (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
-    setEditingTaskId(id);
-    setNewTaskTitle(task.title);
-    setNewTaskDescription(task.description || '');
-    setIsAddModalVisible(true);
-  };
+  const handleEdit = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+      setEditingTaskId(id);
+      setNewTaskTitle(task.title);
+      setNewTaskDescription(task.description || '');
+      setIsAddModalVisible(true);
+    },
+    [tasks]
+  );
 
-  const handleToggleTask = (id: string) => {
-    const task = tasks.find(t => t.id === id);
-    if (!task) return;
+  const handleToggleTask = useCallback(
+    (id: string) => {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
 
-    // If completing a task (going from incomplete to complete)
-    if (!task.completed) {
-      // Add to animating set to trigger animation
-      setAnimatingTaskIds(prev => new Set(prev).add(id));
-      
-      // Wait for animation to complete (2 seconds), THEN toggle the task
-      setTimeout(() => {
+      // If completing a task (going from incomplete to complete)
+      if (!task.completed) {
+        // Add to animating set to trigger animation
+        setAnimatingTaskIds((prev) => new Set(prev).add(id));
+
+        // Wait for animation to complete (2 seconds), THEN toggle the task
+        setTimeout(() => {
+          toggleTask(id);
+          // Remove from animating set
+          setAnimatingTaskIds((prev) => {
+            const newSet = new Set(prev);
+            newSet.delete(id);
+            return newSet;
+          });
+        }, 2000);
+      } else {
+        // If uncompleting, just toggle immediately
         toggleTask(id);
-        // Remove from animating set
-        setAnimatingTaskIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(id);
-          return newSet;
-        });
-      }, 2000);
-    } else {
-      // If uncompleting, just toggle immediately
-      toggleTask(id);
-    }
-  };
+      }
+    },
+    [tasks, toggleTask]
+  );
 
-  const filteredTasks = getFilteredTasks();
-  const todoTasks = filteredTasks.filter((t) => !t.completed);
-  const completedTasks = filteredTasks.filter((t) => t.completed);
-
-  // Display tasks based on active tab and animation state
-  const displayTodoTasks = todoTasks;
-  const displayCompletedTasks = completedTasks;
+  // Memoize filtered tasks to avoid redundant filtering on every render
+  const { todoTasks, completedTasks } = useMemo(() => {
+    const todo = tasks.filter((t) => !t.completed);
+    const completed = tasks.filter((t) => t.completed);
+    return { todoTasks: todo, completedTasks: completed };
+  }, [tasks]);
 
   return (
     <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" />
-      
-      <ScrollView 
-        className="flex-1" 
+
+      <ScrollView
+        className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
-      >
+        contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <View className="border-b border-gray-200 px-6 pb-6 pt-8">
           <Text className="text-5xl font-black text-black">The Todo App</Text>
           <Text className="mt-2 text-base text-gray-500">
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric',
+            })}
           </Text>
         </View>
 
         {/* Active Tab Content */}
         {activeTab === 'active' && (
           <>
-            {displayTodoTasks.length > 0 ? (
+            {todoTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Active ({todoTasks.length})
                 </Text>
-                {displayTodoTasks.map((task) => (
-                  <TaskItem 
-                    key={task.id} 
-                    task={task} 
-                    onToggle={handleToggleTask} 
+                {todoTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onToggle={handleToggleTask}
                     onDelete={deleteTask}
                     isAnimating={animatingTaskIds.has(task.id)}
                     onEdit={handleEdit}
@@ -131,8 +141,7 @@ export default function Home() {
                 </View>
                 <Text className="text-center text-xl font-bold text-black">All Clear!</Text>
                 <Text className="mt-2 text-center text-base text-gray-500">
-                  You have no active tasks.
-                  Tap the + button to create your first task
+                  You have no active tasks. Tap the + button to create your first task
                 </Text>
               </View>
             )}
@@ -142,16 +151,16 @@ export default function Home() {
         {/* Completed Tab Content */}
         {activeTab === 'completed' && (
           <>
-            {displayCompletedTasks.length > 0 ? (
+            {completedTasks.length > 0 ? (
               <View className="px-6 pt-6">
                 <Text className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-400">
                   Completed ({completedTasks.length})
                 </Text>
-                {displayCompletedTasks.map((task) => (
-                  <TaskItem 
-                    key={task.id} 
-                    task={task} 
-                    onToggle={handleToggleTask} 
+                {completedTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    onToggle={handleToggleTask}
                     onDelete={deleteTask}
                     isAnimating={false}
                     onEdit={handleEdit}
@@ -171,45 +180,36 @@ export default function Home() {
             )}
           </>
         )}
-
       </ScrollView>
 
       {/* Bottom Navigation Bar */}
-      <View 
+      <View
         className="absolute bottom-0 left-0 right-0 border-t border-gray-200 bg-white px-4 py-3"
-        style={{ paddingBottom: insets.bottom + 12 }}
-      >
+        style={{ paddingBottom: insets.bottom + 12 }}>
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             onPress={() => setActiveTab('active')}
             className={`flex-1 rounded-2xl py-4 ${
               activeTab === 'active' ? 'border-2 border-black' : ''
             }`}
-            activeOpacity={0.7}
-          >
-            <Text className="text-center text-base font-bold text-black">
-              Active
-            </Text>
+            activeOpacity={0.7}>
+            <Text className="text-center text-base font-bold text-black">Active</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             onPress={() => setActiveTab('completed')}
             className={`flex-1 rounded-2xl py-4 ${
               activeTab === 'completed' ? 'border-2 border-black' : ''
             }`}
-            activeOpacity={0.7}
-          >
-            <Text className="text-center text-base font-bold text-black">
-              Completed
-            </Text>
+            activeOpacity={0.7}>
+            <Text className="text-center text-base font-bold text-black">Completed</Text>
           </TouchableOpacity>
 
           {/* Add Button */}
           <TouchableOpacity
             onPress={() => setIsAddModalVisible(true)}
             className="h-14 w-14 items-center justify-center rounded-2xl bg-black"
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Text className="text-3xl font-light text-white">+</Text>
           </TouchableOpacity>
         </View>
@@ -220,8 +220,7 @@ export default function Home() {
         visible={isAddModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setIsAddModalVisible(false)}
-      >
+        onRequestClose={() => setIsAddModalVisible(false)}>
         <View className="flex-1 justify-end bg-black/20">
           <View className="rounded-t-3xl bg-white px-6 pb-8 pt-6">
             <View className="mb-6 flex-row items-center justify-between">
@@ -254,8 +253,7 @@ export default function Home() {
             <TouchableOpacity
               onPress={handleAddTask}
               className="rounded-2xl bg-black py-4"
-              activeOpacity={0.7}
-            >
+              activeOpacity={0.7}>
               <Text className="text-center text-base font-bold text-white">Add Task</Text>
             </TouchableOpacity>
           </View>

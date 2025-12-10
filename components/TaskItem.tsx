@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 import { View, TouchableOpacity, Animated } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Text } from './nativewindui/Text';
@@ -14,7 +14,13 @@ interface TaskItemProps {
   isAnimating?: boolean;
 }
 
-export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false }: TaskItemProps) {
+export const TaskItem = memo(function TaskItem({
+  task,
+  onToggle,
+  onDelete,
+  onEdit,
+  isAnimating = false,
+}: TaskItemProps) {
   // Animation values
   const checkmarkScale = useRef(new Animated.Value(0)).current;
   const checkmarkOpacity = useRef(new Animated.Value(0)).current;
@@ -81,7 +87,8 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
       slideAnim.setValue(0);
       fadeAnim.setValue(1);
     }
-  }, [isAnimating]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAnimating]); // Animation refs (checkmarkScale, checkmarkOpacity, strikethroughWidth, slideAnim, fadeAnim) are stable and excluded
 
   const handleCirclePress = () => {
     onToggle(task.id);
@@ -103,62 +110,65 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
         friction={2}
         overshootRight={false}
         renderRightActions={() => (
-          <View style={{ width: ACTION_WIDTH, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8 }}>
-              { !task.completed ? (
-                <Animated.View style={{ marginRight: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => onEdit && onEdit(task.id)}
-                    className="h-10 w-10 items-center justify-center rounded-xl bg-white border border-black"
-                    activeOpacity={0.8}
-                  >
-                    <Icon name="pencil" size={18} className="text-black" />
-                  </TouchableOpacity>
-                </Animated.View>
-              ) : (
-                <Animated.View style={{ marginRight: 8 }}>
-                  <TouchableOpacity
-                    onPress={() => onToggle(task.id)}
-                    className="h-10 w-10 items-center justify-center rounded-xl bg-white border border-black"
-                    activeOpacity={0.8}
-                  >
-                    <MaterialIcons name="undo" size={18} color="#000" />
-                  </TouchableOpacity>
-                </Animated.View>
-              )}
+          <View
+            style={{
+              width: ACTION_WIDTH,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              paddingRight: 8,
+            }}>
+            {!task.completed ? (
+              <Animated.View style={{ marginRight: 8 }}>
+                <TouchableOpacity
+                  onPress={() => onEdit && onEdit(task.id)}
+                  className="h-10 w-10 items-center justify-center rounded-xl border border-black bg-white"
+                  activeOpacity={0.8}>
+                  <Icon name="pencil" size={18} className="text-black" />
+                </TouchableOpacity>
+              </Animated.View>
+            ) : (
+              <Animated.View style={{ marginRight: 8 }}>
+                <TouchableOpacity
+                  onPress={() => onToggle(task.id)}
+                  className="h-10 w-10 items-center justify-center rounded-xl border border-black bg-white"
+                  activeOpacity={0.8}>
+                  <MaterialIcons name="undo" size={18} color="#000" />
+                </TouchableOpacity>
+              </Animated.View>
+            )}
 
             <Animated.View>
               <TouchableOpacity
                 onPress={() => onDelete(task.id)}
                 className="h-10 w-10 items-center justify-center rounded-xl bg-red-500"
-                activeOpacity={0.8}
-              >
+                activeOpacity={0.8}>
                 <Icon name="trash" size={18} className="text-white" />
               </TouchableOpacity>
             </Animated.View>
           </View>
-        )}
-      >
+        )}>
         <Animated.View
           style={{
             transform: [{ translateX: combinedTranslateX }],
             opacity: fadeAnim,
-          }}
-        >
+          }}>
           <View
             className={`flex-row items-center rounded-2xl px-5 py-4 ${
-              task.completed ? 'bg-gray-100 border border-gray-200' : 'bg-black'
-            }`}
-          >
+              task.completed ? 'border border-gray-200 bg-gray-100' : 'bg-black'
+            }`}>
             <View className="flex-1 flex-row items-center gap-4">
               {/* Circle Checkbox - Now pressable */}
               <TouchableOpacity
                 onPress={handleCirclePress}
                 activeOpacity={0.7}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
-                  isAnimating || task.completed ? 'bg-green-500 border-green-500' : 'bg-white border-white'
-                }`}>
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <View
+                  className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
+                    isAnimating || task.completed
+                      ? 'border-green-500 bg-green-500'
+                      : 'border-white bg-white'
+                  }`}>
                   {(isAnimating || task.completed) && (
                     <Animated.Text
                       style={{
@@ -167,8 +177,7 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
                         color: 'white',
                         transform: [{ scale: isAnimating ? checkmarkScale : 1 }],
                         opacity: isAnimating ? checkmarkOpacity : 1,
-                      }}
-                    >
+                      }}>
                       ✓
                     </Animated.Text>
                   )}
@@ -178,9 +187,10 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
               <View style={{ flex: 1 }}>
                 {/* Title with animated strikethrough */}
                 <View style={{ position: 'relative' }}>
-                  <Text className={`text-base font-semibold ${
-                    task.completed ? 'text-gray-400' : 'text-white'
-                  }`}>
+                  <Text
+                    className={`text-base font-semibold ${
+                      task.completed ? 'text-gray-400' : 'text-white'
+                    }`}>
                     {task.title}
                   </Text>
                   {(isAnimating || task.completed) && (
@@ -200,9 +210,9 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
                   )}
                 </View>
                 {task.description && (
-                  <Text className={`mt-1 text-sm ${
-                    task.completed ? 'text-gray-300' : 'text-white/70'
-                  }`} numberOfLines={1}>
+                  <Text
+                    className={`mt-1 text-sm ${task.completed ? 'text-gray-300' : 'text-white/70'}`}
+                    numberOfLines={1}>
                     {task.description}
                   </Text>
                 )}
@@ -213,4 +223,4 @@ export function TaskItem({ task, onToggle, onDelete, onEdit, isAnimating = false
       </Swipeable>
     </View>
   );
-}
+});
